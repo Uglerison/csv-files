@@ -184,9 +184,6 @@
         uploadButton.addEventListener('click', async () => {
             if (!selectedFile) return;
 
-            const formData = new FormData();
-            formData.append('file', selectedFile);
-
             try {
                 uploadButton.disabled = true;
                 showStatus('Enviando arquivo...', 'success');
@@ -194,12 +191,24 @@
                 console.log('Iniciando upload do arquivo:', selectedFile.name);
                 console.log('Tamanho do arquivo:', selectedFile.size, 'bytes');
 
+                // Read the file content
+                const fileContent = await selectedFile.text();
+                console.log('Conteúdo do arquivo:', fileContent.substring(0, 100) + '...');
+
+                // Create the request body
+                const requestBody = {
+                    filename: selectedFile.name,
+                    content: fileContent,
+                    type: 'text/csv'
+                };
+
                 const response = await fetch('https://n8n.uglerison.shop/webhook-test/teste', {
                     method: 'POST',
-                    body: formData,
                     headers: {
+                        'Content-Type': 'application/json',
                         'Accept': 'application/json',
-                    }
+                    },
+                    body: JSON.stringify(requestBody)
                 });
 
                 console.log('Status da resposta:', response.status);
