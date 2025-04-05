@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload de Planilha</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 600px;
+            text-align: center;
+        }
+
+        h1 {
+            color: #2d3748;
+            margin-bottom: 20px;
+            font-size: 2.5em;
+        }
+
+        p {
+            color: #4a5568;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+
+        .upload-area {
+            border: 2px dashed #cbd5e0;
+            border-radius: 10px;
+            padding: 40px;
+            margin-bottom: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .upload-area:hover {
+            border-color: #4299e1;
+            background-color: #f7fafc;
+        }
+
+        .upload-area.dragover {
+            border-color: #4299e1;
+            background-color: #ebf8ff;
+        }
+
+        .upload-icon {
+            font-size: 48px;
+            color: #4299e1;
+            margin-bottom: 15px;
+        }
+
+        .upload-text {
+            color: #4a5568;
+            margin-bottom: 10px;
+        }
+
+        .file-name {
+            color: #2d3748;
+            font-weight: 500;
+            margin-top: 10px;
+        }
+
+        button {
+            background-color: #4299e1;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #3182ce;
+        }
+
+        button:disabled {
+            background-color: #cbd5e0;
+            cursor: not-allowed;
+        }
+
+        .status {
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 6px;
+            display: none;
+        }
+
+        .status.success {
+            background-color: #c6f6d5;
+            color: #2f855a;
+        }
+
+        .status.error {
+            background-color: #fed7d7;
+            color: #c53030;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Upload de Planilha</h1>
+        <p>Selecione ou arraste seu arquivo CSV para fazer o upload</p>
+        
+        <div class="upload-area" id="dropZone">
+            <div class="upload-icon">📁</div>
+            <div class="upload-text">Clique ou arraste o arquivo aqui</div>
+            <input type="file" id="fileInput" accept=".csv" style="display: none;">
+            <div class="file-name" id="fileName"></div>
+        </div>
+
+        <button id="uploadButton" disabled>Enviar Arquivo</button>
+        <div id="status" class="status"></div>
+    </div>
+
+    <script>
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const fileName = document.getElementById('fileName');
+        const uploadButton = document.getElementById('uploadButton');
+        const status = document.getElementById('status');
+        let selectedFile = null;
+
+        // Eventos para drag and drop
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('dragover');
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            const file = e.dataTransfer.files[0];
+            handleFileSelection(file);
+        });
+
+        dropZone.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            handleFileSelection(file);
+        });
+
+        function handleFileSelection(file) {
+            if (file && file.type === 'text/csv') {
+                selectedFile = file;
+                fileName.textContent = file.name;
+                uploadButton.disabled = false;
+                status.style.display = 'none';
+            } else {
+                showStatus('Por favor, selecione um arquivo CSV válido.', 'error');
+                selectedFile = null;
+                fileName.textContent = '';
+                uploadButton.disabled = true;
+            }
+        }
+
+        uploadButton.addEventListener('click', async () => {
+            if (!selectedFile) return;
+
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+
+            try {
+                uploadButton.disabled = true;
+                showStatus('Enviando arquivo...', 'success');
+
+                const response = await fetch('https://n8n.uglerison.shop/webhook-test/teste', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (response.ok) {
+                    showStatus('Arquivo enviado com sucesso!', 'success');
+                    selectedFile = null;
+                    fileName.textContent = '';
+                    uploadButton.disabled = true;
+                } else {
+                    throw new Error('Erro ao enviar arquivo');
+                }
+            } catch (error) {
+                showStatus('Erro ao enviar arquivo. Tente novamente.', 'error');
+                uploadButton.disabled = false;
+            }
+        });
+
+        function showStatus(message, type) {
+            status.textContent = message;
+            status.className = `status ${type}`;
+            status.style.display = 'block';
+        }
+    </script>
+</body>
+</html> 
